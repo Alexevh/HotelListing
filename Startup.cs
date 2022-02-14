@@ -1,7 +1,11 @@
+using AutoMapper;
+using HotelListing.Configurations;
+using HotelListing.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +31,11 @@ namespace HotelListing
         public void ConfigureServices(IServiceCollection services)
         {
 
+            //Configure the DB
+            services.AddDbContext<DatabaseContext>(options => 
+            options.UseSqlServer(Configuration.GetConnectionString("sqlConnection"))
+            );
+               
             services.AddControllers();
 
             // Enable CORS, the cors need an object that is the policy rules
@@ -36,6 +45,10 @@ namespace HotelListing
                 .AllowAnyMethod()
                 .AllowAnyHeader());
             });
+
+            /* Configure the Automapper*/
+            services.AddAutoMapper(typeof(MapperInitializer));
+
 
             services.AddSwaggerGen(c =>
             {
