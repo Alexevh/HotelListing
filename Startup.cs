@@ -1,6 +1,8 @@
 using AutoMapper;
 using HotelListing.Configurations;
 using HotelListing.Data;
+using HotelListing.IRepository;
+using HotelListing.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -35,8 +37,11 @@ namespace HotelListing
             services.AddDbContext<DatabaseContext>(options => 
             options.UseSqlServer(Configuration.GetConnectionString("sqlConnection"))
             );
-               
-            services.AddControllers();
+            
+            /* The original out of the box code is only services.addcontroller, but because I have some circular dependencies (a country has a list of hotels
+             * and each hotel has a country), I added newtossoft json serializer and set the option to ignore the loop*/
+            services.AddControllers()
+                .AddNewtonsoftJson(option => option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
             // Enable CORS, the cors need an object that is the policy rules
             services.AddCors( o => {
@@ -48,6 +53,9 @@ namespace HotelListing
 
             /* Configure the Automapper*/
             services.AddAutoMapper(typeof(MapperInitializer));
+
+            /* Add the UnitOfwork*/
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
 
 
             services.AddSwaggerGen(c =>
