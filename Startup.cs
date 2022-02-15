@@ -3,9 +3,11 @@ using HotelListing.Configurations;
 using HotelListing.Data;
 using HotelListing.IRepository;
 using HotelListing.Repository;
+using HotelListing.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +39,13 @@ namespace HotelListing
             services.AddDbContext<DatabaseContext>(options => 
             options.UseSqlServer(Configuration.GetConnectionString("sqlConnection"))
             );
+
+            /* Configure my identity service*/
+            services.AddAuthentication();
+            services.ConfigureIdentity();
+            /* Configure the JWT*/
+            services.ConfigureJWT(Configuration);
+
             
             /* The original out of the box code is only services.addcontroller, but because I have some circular dependencies (a country has a list of hotels
              * and each hotel has a country), I added newtossoft json serializer and set the option to ignore the loop*/
@@ -50,6 +59,8 @@ namespace HotelListing
                 .AllowAnyMethod()
                 .AllowAnyHeader());
             });
+            /* Configure the AuthManager service*/
+            services.AddScoped<IAuthManager, AuthManager>();
 
             /* Configure the Automapper*/
             services.AddAutoMapper(typeof(MapperInitializer));
@@ -57,6 +68,7 @@ namespace HotelListing
             /* Add the UnitOfwork*/
             services.AddTransient<IUnitOfWork, UnitOfWork>();
 
+           
 
             services.AddSwaggerGen(c =>
             {
@@ -83,7 +95,10 @@ namespace HotelListing
 
             app.UseRouting();
 
+            //Because we are using netcore auth and autorization we need to put it here
+            app.UseAuthentication();
             app.UseAuthorization();
+           
 
             app.UseEndpoints(endpoints =>
             {

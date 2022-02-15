@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HotelListing.DTOModels;
 using HotelListing.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -47,8 +48,9 @@ namespace HotelListing.Controllers
             }
 
         }
-
+        [Authorize]
         [HttpGet("{id:int}")]
+        
         public async Task<IActionResult> GetHotel(int id)
         {
             try

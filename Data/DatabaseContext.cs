@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using HotelListing.Configurations.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +9,8 @@ using System.Threading.Tasks;
 // This class is our bridge between the models and the actual database
 namespace HotelListing.Data
 {
-    public class DatabaseContext : DbContext 
+    /* Because I am implementing MS Authentication Identity, the DbContext will no longer inherit DbContext and will inherit IdentityDbContext*/
+    public class DatabaseContext : IdentityDbContext<ApiUser>
     {
         //When we call the constructor, because it inherits dbcontext we call the base(options) wich is a call to the upper class constructor
         public DatabaseContext(DbContextOptions options) : base(options)
@@ -26,58 +29,19 @@ namespace HotelListing.Data
         // Data seed
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<Country>().HasData(
-                new Country
-                {
-                    Id = 1,
-                    Name = "Uruguay",
-                    ShortName = "UY"
-                },
-                new Country
-                {
-                    Id = 2,
-                    Name = "United States",
-                    ShortName = "USA"
 
-                },
-                new Country
-                {
-                    Id = 3,
-                    Name = "United Kingdom",
-                    ShortName = "UK"
-                }
+            /* I need to build the base class because is now IdentitiyDbContext */
+            base.OnModelCreating(builder);
 
-                );
+            /* We are populating the roles in the DB, we have a class called roleconfiguration where we have this*/
+            builder.ApplyConfiguration(new RoleConfiguration());
+            builder.ApplyConfiguration(new CountryConfiguration());
+            builder.ApplyConfiguration(new HotelConfiguration());
+
+           
 
 
-            builder.Entity<Hotel>().HasData(
-                new Hotel
-                {
-                    Id = 1,
-                    Name = "Hilton",
-                    Address = "En punta papa",
-                    CountryId = 1,
-                    Rating = 5.0
-                },
-                new Hotel
-                {
-                    Id = 2,
-                    Name = "Trump Tower",
-                    Address = "NYC",
-                    CountryId = 2,
-                    Rating = 4.0
-
-                },
-                new Hotel
-                {
-                    Id = 3,
-                    Name = "Castle Windsor",
-                    Address = "London",
-                    CountryId = 1,
-                    Rating = 3.8
-                }
-
-                );
+         
         }
     }
 }
