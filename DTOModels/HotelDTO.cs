@@ -34,4 +34,6 @@ namespace HotelListing.DTOModels
        
 
     }
+
+    public class UpdateHotelDTO : CreateHotelDTO { }
 }
