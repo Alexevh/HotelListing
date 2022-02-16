@@ -2,6 +2,7 @@
 using HotelListing.Data;
 using HotelListing.DTOModels;
 using HotelListing.IRepository;
+using Marvin.Cache.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,11 +30,15 @@ namespace HotelListing.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCountries()
+        /* These annotations for the cache are NOT required because we have implemented a global cache, this is an example of
+         how to ovverride the global cache settings to add or decrease the cache*/
+        [HttpCacheExpiration(CacheLocation =CacheLocation.Public, MaxAge = 70)]
+        [HttpCacheValidation(MustRevalidate =true)]
+        public async Task<IActionResult> GetCountries([FromQuery] RequestParams requestParams)
         {
             try
             {
-                var countries = await _unitOfWork.Countries.GetAll();
+                var countries = await _unitOfWork.Countries.GetAllPaginated(requestParams, null);
                 /* While returning the data itself will work, we dont want the public working with the model, we will convert to DTO*/
                 var results = _mapper.Map<IList<CountryDTO>>(countries);
                 return Ok(results);
@@ -172,7 +177,7 @@ namespace HotelListing.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError($"FAIL TO UPDATE {nameof(CreateHotel)}", e);
+                _logger.LogError($"FAIL TO UPDATE {nameof(CreateCountry)}", e);
                 return StatusCode(500, "Internal server error");
             }
 

@@ -6,6 +6,7 @@ using HotelListing.Repository;
 using HotelListing.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +41,16 @@ namespace HotelListing
             options.UseSqlServer(Configuration.GetConnectionString("sqlConnection"))
             );
 
+
+
+            //add memorycache for throttling and ratelimit
+            services.AddMemoryCache();
+            services.ConfigureRateLimiting();
+            services.AddHttpContextAccessor();
+
+            /* Enable cache*/
+            services.ConfigureHttpCacheHeaders();
+
             /* Configure my identity service*/
             services.AddAuthentication();
             services.ConfigureIdentity();
@@ -48,8 +59,16 @@ namespace HotelListing
 
             
             /* The original out of the box code is only services.addcontroller, but because I have some circular dependencies (a country has a list of hotels
-             * and each hotel has a country), I added newtossoft json serializer and set the option to ignore the loop*/
-            services.AddControllers()
+             * and each hotel has a country), I added newtossoft json serializer and set the option to ignore the loop
+             
+             Also, I added the caxhe for every control so I dont need to put the [Resoponsecache(duration = 60) in each one]
+             */
+            services.AddControllers(config => {
+                config.CacheProfiles.Add("12SecondsDuration", new CacheProfile
+                {
+                    Duration = 120
+                });
+            })
                 .AddNewtonsoftJson(option => option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
             // Enable CORS, the cors need an object that is the policy rules
@@ -68,7 +87,11 @@ namespace HotelListing
             /* Add the UnitOfwork*/
             services.AddTransient<IUnitOfWork, UnitOfWork>();
 
-           
+            //configure versioning
+            services.ConfigureVersioning();
+
+
+
 
             services.AddSwaggerGen(c =>
             {
@@ -88,10 +111,23 @@ namespace HotelListing
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "HotelListing v1"));
 
+
+            //Cusyom expetionhandler
+            app.ConfigureExceptionHandler();
+
+           
+
             app.UseHttpsRedirection();
 
             //We tell the app to use the CORS policy we defined in the cofigureServices
             app.UseCors("CorsPolicy");
+
+            //Enable caching middleware
+            app.UseResponseCaching();
+            app.UseHttpCacheHeaders();
+
+            // Use filtering throttle
+            app.UseIpRateLimiting();
 
             app.UseRouting();
 

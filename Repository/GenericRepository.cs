@@ -1,4 +1,5 @@
 ﻿using HotelListing.Data;
+using HotelListing.DTOModels;
 using HotelListing.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace HotelListing.Repository
 {
@@ -53,6 +55,32 @@ namespace HotelListing.Repository
             return await query.AsNoTracking().FirstOrDefaultAsync(expression);
         }
 
+        //This is the getAllPaginated
+        public async Task<IPagedList<T>> GetAllPaginated(RequestParams requestParams, List<string> includes = null)
+        {
+            IQueryable<T> query = _db;
+
+        
+            /* The includes are optional, by default are null, but if the user included some child we will fetch it too*/
+            if (includes != null)
+            {
+                foreach (var includeProperty in includes)
+                {
+                    query = query.Include(includeProperty);
+                }
+
+            }
+
+           
+
+            /* we unnattach the data, gthe expression is a lambda expression we can add, so its findbyName, FindByiD, etc
+             the toPagedListAsync is from a library x.pagelist.mvcore
+             */
+            return await query.AsNoTracking().ToPagedListAsync(requestParams.pageNumber, requestParams.PageSize);
+
+        }
+
+
         public async Task<IList<T>> GetAll(Expression<Func<T, bool>> expression = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, List<string> includes = null)
         {
             IQueryable<T> query = _db;
@@ -82,6 +110,7 @@ namespace HotelListing.Repository
             return await query.AsNoTracking().ToListAsync();
         }
 
+       
         public async Task Insert(T entity)
         {
            await _db.AddAsync(entity);
